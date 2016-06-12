@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <cstdio>
+#include <cmath>
 
 #include "Asset.h"
 #include "DinodeckGL.h"
@@ -13,6 +14,7 @@
 #include "IScreenChangeListener.h"
 #include "LuaState.h"
 #include "TextureManager.h"
+#include "FrameBuffer.h"
 
 
 class FTTextureFont;
@@ -34,6 +36,7 @@ Dinodeck::Dinodeck(const std::string& name)
     mGame = new Game(&mSettings, &mManifestAssetStore, mTextureManager);
     mManifestAssetStore.RegisterAssetOwner("scripts", mGame);
     mDDAudio = new DDAudio();
+    mFrameBuffer = new FrameBuffer();
     // You don't require fonts or textures for a game
     mManifestAssetStore.RegisterAssetOwner("textures", mTextureManager, ManifestAssetStore::Optional);
     mManifestAssetStore.RegisterAssetOwner("fonts", &mManifestAssetStore, ManifestAssetStore::Optional);
@@ -56,6 +59,11 @@ Dinodeck::~Dinodeck()
     if(mDDAudio)
     {
         delete mDDAudio;
+    }
+
+    if(mFrameBuffer)
+    {
+        delete mFrameBuffer;
     }
 }
 
@@ -93,11 +101,38 @@ bool Dinodeck::ReadInSettingsFile(const char* path)
     mSettings.name = luaState.GetString("name", mSettings.name.c_str());
     mSettings.width = luaState.GetInt("width", mSettings.width);
     mSettings.height = luaState.GetInt("height", mSettings.height);
+    mSettings.displayWidth = luaState.GetInt("display_width", mSettings.width);
+    mSettings.displayHeight = luaState.GetInt("display_height", mSettings.height);
     mSettings.mainScript = luaState.GetString("main_script", "main.lua");
     mSettings.onUpdate = luaState.GetString("on_update", "update()");
     mSettings.manifestPath = luaState.GetString("manifest", "");
     mSettings.webserver = luaState.GetBoolean("webserver", false);
     mSettings.orientation = luaState.GetString("orientation", "portrait");
+
+    // Display Width and Height must be equal or greater
+    // than width and height
+    if(mSettings.width > mSettings.displayWidth)
+    {
+        dsprintf("Display width too small.\n\tResizing [%d]->[%d]\n",
+                 mSettings.displayWidth,
+                 mSettings.width);
+        mSettings.displayWidth = mSettings.width;
+    }
+
+    if(mSettings.height > mSettings.displayHeight)
+    {
+        dsprintf("Display height too small.\n\tResizing [%d]->[%d]\n",
+                 mSettings.displayHeight,
+                 mSettings.height);
+        mSettings.displayHeight = mSettings.height;
+    }
+
+    dsprintf("Debug: display_width [%d]\tdisplay_height [%d]\n",
+             mSettings.displayWidth,
+             mSettings.displayHeight);
+
+
+
     SetName(mSettings.name);
     return true;
 }
@@ -163,6 +198,7 @@ bool Dinodeck::ForceReload()
             // Update the timestamp
             time_t lastModified = AssetStore::GetModifiedTimeStamp(*mSettingsFile);
             mSettingsFile->SetTimeLastModified(lastModified);
+            mFrameBuffer->Reset(ViewWidth(), ViewHeight());
         }
     }
     else
@@ -198,7 +234,153 @@ bool Dinodeck::ForceReload()
 //              * Capped to 1/60 on Windows
 void Dinodeck::Update(double deltaTime)
 {
+    // Currently this is a big fat mess
+
+
+    // Might have move debug graphics up to here.
+
+    // 1. RESET should reset the window if either display width
+    // or height change as well as the normal with and height.
+
+    // 2. The map isn't writing the top tile row
+    //    Why? This might be a little debuggable from Lua
+    //    Are the -width -height the same etc.
+
+    // Probably the graphics pipeline *thinks* a current texture
+    // is bound. A better fix, is to invalidate that assumption each frame.
+    //
+    // graphics pipeline->mTexture
+    //
+    // After (and before) text is rendered this should
+    // be done to.
+    // Maybe don't do any glBinds force it through the
+    // texture system
+    //
+
+    // 3. This shouldn't be called each frame, somethings wrong!
+    // mFrameBuffer->Reset(ViewWidth(), ViewHeight());
+    mFrameBuffer->Enable(); // draw scene to texture
+
+    glClearColor(0.164,  0.164,  0.164, 0);
+    glViewport(0, 0, ViewWidth(), ViewHeight());
+
+    {
+        float halfWidth = (float) ViewWidth() / 2;
+        float halfHeight = (float) ViewHeight() / 2;
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        glOrthof(-halfWidth, halfWidth, -halfHeight, halfHeight, 0.0, 0.1);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+    }
+
     mGame->Update(deltaTime);
+    mFrameBuffer->Disable(); // back to drawing to main window
+
+    glClearColor(0,  0,  0, 0);
+    glViewport(0, 0, DisplayWidth(), DisplayHeight());
+
+    {
+        float hWidth = (float) DisplayWidth() / 2.0f;
+        float hHeight = (float) DisplayHeight() / 2.0f;
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        glOrthof(-hWidth, hWidth, -hHeight, hHeight, 0.0, 0.1);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+    }
+
+    // This should go somewher else but render the quad
+    //GLuint prevTexture = 0;
+    //glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*) &prevTexture);
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, mFrameBuffer->TextureId());
+        // For now inline code
+        const int TOTAL_VERTS = 6;
+        Vertex vertexBuffer[TOTAL_VERTS];
+
+        const unsigned int POSITION_SIZE = 3; // no w
+        const unsigned int COLOUR_SIZE = 4;
+        const unsigned int TEXCOORD_SIZE = 2;
+
+        // Fill it up
+        {
+            Vector colour;
+            colour.SetBroadcast(1.0f);
+            const float halfWidth = floor(((float)DisplayWidth())/2.0f);
+            const float halfHeight = floor(((float)DisplayHeight())/2.0f);
+
+            const float x = 0;
+            // TL
+            vertexBuffer[0] = Vertex(
+                Vector(x - halfWidth, 0 + halfHeight, 0.f, 1),
+                colour,
+                0, 1);
+
+
+            // TR
+            vertexBuffer[1] = Vertex(
+                Vector(x + halfWidth, 0 + halfHeight, 0, 1),
+                colour,
+                1, 1);
+
+            // BL
+            vertexBuffer[2] = Vertex(
+                Vector(x - halfWidth, 0 - halfHeight, 0, 1),
+                colour,
+                0, 0);
+
+            // TR
+            vertexBuffer[3] = Vertex(
+                Vector(x + halfWidth, 0 + halfHeight, 0, 1),
+                colour,
+                1, 1);
+
+            // BR
+            vertexBuffer[4] = Vertex(
+                Vector(x + halfWidth, 0 - halfHeight, 0, 1),
+                colour,
+                1, 0);
+
+            // BL
+            vertexBuffer[5] = Vertex(
+                Vector(x - halfWidth, 0 - halfHeight, 0, 1),
+                colour,
+                0, 0);
+        }
+
+        glVertexPointer(POSITION_SIZE, GL_FLOAT, sizeof(Vertex), vertexBuffer);
+        glEnableClientState(GL_VERTEX_ARRAY);
+
+        glColorPointer(COLOUR_SIZE, GL_FLOAT, sizeof(Vertex), &vertexBuffer[0].r);
+        glEnableClientState(GL_COLOR_ARRAY);
+
+        glTexCoordPointer(TEXCOORD_SIZE, GL_FLOAT, sizeof(Vertex), &vertexBuffer[0].u);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+
+        glPushMatrix();
+        {
+            glDrawArrays(GL_TRIANGLES, 0, TOTAL_VERTS);
+        }
+        glPopMatrix();
+
+        //
+        // Disable the various pointers
+        //
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+
+        glDisable(GL_TEXTURE_2D);
+    }
+
+
+    //glBindTexture(GL_TEXTURE_2D, prevTexture);
 }
 
 bool Dinodeck::IsRunning() const
@@ -211,6 +393,8 @@ void Dinodeck::ResetRenderWindow(unsigned int width, unsigned int height)
     dsprintf("Resetting render window %d %d\n", width, height );
     mSettings.width = width;
     mSettings.height = height;
+
+    mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     // A nice slate greyish clear colour
     glClearColor(0.164,  0.164,  0.164, 0);
     glViewport(0, 0, mSettings.width, mSettings.height);

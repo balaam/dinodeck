@@ -153,6 +153,7 @@ public:
     float CameraRotation() const { return mRotateAngle; }
     void SetCameraRotation(float value) { mRotateAngle = value; }
     void Reset(); // This resets some of the font state info.
+    void OnNewFrame() { mTexture = NULL; }
     bool SetFont(const char* name);
 
     void SetBlend(eBlendMode blend);

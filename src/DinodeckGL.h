@@ -7,7 +7,7 @@
 
 #include <OpenGL/gl.h>
 #define glOrthof glOrtho
-
+#define glFramebufferTexture glFramebufferTextureEXT
 #else
 
 #include <gl/gl.h>

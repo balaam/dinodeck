@@ -15,6 +15,7 @@ class Game;
 class TextureManager;
 class IScreenChangeListener;
 class DDAudio;
+class FrameBuffer;
 
 
 class Dinodeck : IAssetOwner
@@ -28,6 +29,7 @@ private:
     TextureManager* mTextureManager;
     IScreenChangeListener* mScreenChangeListener;
     DDAudio* mDDAudio;
+    FrameBuffer* mFrameBuffer;
     static Dinodeck* Instance;
 
 
@@ -42,6 +44,8 @@ public:
     const std::string& Name() const { return mName; }
     unsigned int ViewHeight() const { return mSettings.height; }
     unsigned int ViewWidth() const { return mSettings.width; }
+    unsigned int DisplayWidth() const { return mSettings.displayWidth; }
+    unsigned int DisplayHeight() const { return mSettings.displayHeight; }
     bool ForceReload();
     void ResetRenderWindow(unsigned int width, unsigned int height);
     void SetName(const std::string& value) { mName = value; }

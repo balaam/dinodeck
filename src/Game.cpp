@@ -1,6 +1,7 @@
 #include "Game.h"
 
 #include <ctime>
+#include <assert.h>
 
 #include "../bin/default_font.h"
 #include "Asset.h"
@@ -240,6 +241,12 @@ void Game::Update(double deltaTime)
     {
         RenderError();
         return;
+    }
+
+    for(std::vector<Renderer*>::iterator it = Renderer::mRenderers.begin();
+        it != Renderer::mRenderers.end(); ++it)
+    {
+        (*it)->Graphics()->OnNewFrame();
     }
 
     bool result = mLuaState->DoString("update()");
