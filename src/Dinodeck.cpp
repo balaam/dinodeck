@@ -77,7 +77,6 @@ bool Dinodeck::ReadInSettingsFile(const char* path)
     if(!DDFile::FileExists(path))
     {
         dsprintf("ERROR: Settings file [%s] doesn't exist.\n", path);
-
         // If the settings file doesn't exist, then the assets
         // should be cleared. As they're no longer in the project.
         mManifestAssetStore.Clear();
@@ -420,4 +419,6 @@ void Dinodeck::OpenGLContextReset()
     mManifestAssetStore.SetAsNotLoaded(Asset::Font); // Font also uses textures.
     // Reset the system font too.
     mGame->ResetSystemFont();
+    mFrameBuffer->Reset(ViewWidth(),
+                        ViewHeight());
 }
