@@ -204,6 +204,7 @@ void Game::RenderError()
     {
         mDebugGraphics = new GraphicsPipeline();
     }
+    mDebugGraphics->OnNewFrame();
     //
     // Prints error and reset command to renderer.
     //

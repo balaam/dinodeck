@@ -71,6 +71,9 @@ public:
     // Callback to reload the manifest
     virtual void OnAssetDestroyed(Asset& asset);
     virtual bool OnAssetReload(Asset& asset);
+private:
+    void SetProjectRender();
+    void SetFrameBufferRender();
 };
 
 #endif
