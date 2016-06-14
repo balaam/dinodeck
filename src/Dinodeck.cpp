@@ -260,12 +260,16 @@ void Dinodeck::Update(double deltaTime)
     // mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     mFrameBuffer->Enable(); // draw scene to texture
 
-    SetProjectRender();
+    glClearColor(mSettings.clearRed,
+                 mSettings.clearGreen,
+                 mSettings.clearBlue, 0);
+    SetModelViewMatrix(ViewWidth(), ViewHeight());
 
     mGame->Update(deltaTime);
     mFrameBuffer->Disable(); // back to drawing to main window
 
-    SetFrameBufferRender();
+    glClearColor(0,  0,  0, 0);
+    SetModelViewMatrix(DisplayWidth(), DisplayHeight());
 
     // This should go somewher else but render the quad
     //GLuint prevTexture = 0;
@@ -363,31 +367,13 @@ bool Dinodeck::IsRunning() const
     return mGame->IsRunning();
 }
 
-void Dinodeck::SetProjectRender()
+void Dinodeck::SetModelViewMatrix(float width, float height)
 {
-    glClearColor(mSettings.clearRed,
-                 mSettings.clearGreen,
-                 mSettings.clearBlue, 0);
-
-    glViewport(0, 0, ViewWidth(), ViewHeight());
+    glViewport(0, 0, width, height);
 
      // Setups an orthographic view, should be handled by renderer.
-    float hWidth = (float) ViewWidth() / 2.0f;
-    float hHeight = (float) ViewHeight() / 2.0f;
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrthof(-hWidth, hWidth, -hHeight, hHeight, 0.0, 0.1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
-
-void Dinodeck::SetFrameBufferRender()
-{
-    glClearColor(0,  0,  0, 0);
-    glViewport(0, 0, DisplayWidth(), DisplayHeight());
-    float hWidth = (float) DisplayWidth() / 2.0f;
-    float hHeight = (float) DisplayHeight() / 2.0f;
+    float hWidth = width / 2.0f;
+    float hHeight = height / 2.0f;
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -404,7 +390,10 @@ void Dinodeck::ResetRenderWindow(unsigned int width, unsigned int height)
 
     mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     // A nice slate greyish clear colour
-    SetProjectRender();
+    glClearColor(mSettings.clearRed,
+             mSettings.clearGreen,
+             mSettings.clearBlue, 0);
+    SetModelViewMatrix(ViewWidth(), ViewHeight());
 
     // Enabled blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

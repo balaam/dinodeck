@@ -72,8 +72,7 @@ public:
     virtual void OnAssetDestroyed(Asset& asset);
     virtual bool OnAssetReload(Asset& asset);
 private:
-    void SetProjectRender();
-    void SetFrameBufferRender();
+    void SetModelViewMatrix(float width, float height);
 };
 
 #endif
