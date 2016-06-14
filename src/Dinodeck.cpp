@@ -260,36 +260,12 @@ void Dinodeck::Update(double deltaTime)
     // mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     mFrameBuffer->Enable(); // draw scene to texture
 
-    glClearColor(0.164,  0.164,  0.164, 0);
-    glViewport(0, 0, ViewWidth(), ViewHeight());
-
-    {
-        float halfWidth = (float) ViewWidth() / 2;
-        float halfHeight = (float) ViewHeight() / 2;
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glOrthof(-halfWidth, halfWidth, -halfHeight, halfHeight, 0.0, 0.1);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-    }
+    SetProjectRender();
 
     mGame->Update(deltaTime);
     mFrameBuffer->Disable(); // back to drawing to main window
 
-    glClearColor(0,  0,  0, 0);
-    glViewport(0, 0, DisplayWidth(), DisplayHeight());
-
-    {
-        float hWidth = (float) DisplayWidth() / 2.0f;
-        float hHeight = (float) DisplayHeight() / 2.0f;
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glOrthof(-hWidth, hWidth, -hHeight, hHeight, 0.0, 0.1);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-    }
+    SetFrameBufferRender();
 
     // This should go somewher else but render the quad
     //GLuint prevTexture = 0;
@@ -387,6 +363,39 @@ bool Dinodeck::IsRunning() const
     return mGame->IsRunning();
 }
 
+void Dinodeck::SetProjectRender()
+{
+    glClearColor(mSettings.clearRed,
+                 mSettings.clearGreen,
+                 mSettings.clearBlue, 0);
+
+    glViewport(0, 0, ViewWidth(), ViewHeight());
+
+     // Setups an orthographic view, should be handled by renderer.
+    float hWidth = (float) ViewWidth() / 2.0f;
+    float hHeight = (float) ViewHeight() / 2.0f;
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrthof(-hWidth, hWidth, -hHeight, hHeight, 0.0, 0.1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void Dinodeck::SetFrameBufferRender()
+{
+    glClearColor(0,  0,  0, 0);
+    glViewport(0, 0, DisplayWidth(), DisplayHeight());
+    float hWidth = (float) DisplayWidth() / 2.0f;
+    float hHeight = (float) DisplayHeight() / 2.0f;
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrthof(-hWidth, hWidth, -hHeight, hHeight, 0.0, 0.1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
 void Dinodeck::ResetRenderWindow(unsigned int width, unsigned int height)
 {
     dsprintf("Resetting render window %d %d\n", width, height );
@@ -395,18 +404,7 @@ void Dinodeck::ResetRenderWindow(unsigned int width, unsigned int height)
 
     mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     // A nice slate greyish clear colour
-    glClearColor(0.164,  0.164,  0.164, 0);
-    glViewport(0, 0, mSettings.width, mSettings.height);
-
-     // Setups an orthographic view, should be handled by renderer.
-    float mHalfWidth = (float) width / 2;
-    float mHalfHeight = (float) height / 2;
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrthof(-mHalfWidth, mHalfWidth, -mHalfHeight, mHalfHeight, 0.0, 0.1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    SetProjectRender();
 
     // Enabled blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
