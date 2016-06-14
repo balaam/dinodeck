@@ -28,7 +28,8 @@ Dinodeck::Dinodeck(const std::string& name)
         mGame(NULL),
         mTextureManager(NULL),
         mScreenChangeListener(NULL),
-        mDDAudio(NULL)
+        mDDAudio(NULL),
+        mFrameBuffer(NULL)
 {
     Dinodeck::Instance = this;
     mSettingsFile = new Asset("settings", Asset::Script, "settings.lua", this);
@@ -271,80 +272,33 @@ void Dinodeck::Update(double deltaTime)
     glClearColor(0,  0,  0, 0);
     SetModelViewMatrix(DisplayWidth(), DisplayHeight());
 
-    // This should go somewher else but render the quad
-    //GLuint prevTexture = 0;
-    //glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*) &prevTexture);
+
     {
         glClear(GL_COLOR_BUFFER_BIT);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, mFrameBuffer->TextureId());
-        // For now inline code
-        const int TOTAL_VERTS = 6;
-        Vertex vertexBuffer[TOTAL_VERTS];
+
+
+        // This doesn't need doing each frame...
+        CreateDisplayQuad();
 
         const unsigned int POSITION_SIZE = 3; // no w
         const unsigned int COLOUR_SIZE = 4;
         const unsigned int TEXCOORD_SIZE = 2;
 
-        // Fill it up
-        {
-            Vector colour;
-            colour.SetBroadcast(1.0f);
-            const float halfWidth = floor(((float)DisplayWidth())/2.0f);
-            const float halfHeight = floor(((float)DisplayHeight())/2.0f);
-
-            const float x = 0;
-            // TL
-            vertexBuffer[0] = Vertex(
-                Vector(x - halfWidth, 0 + halfHeight, 0.f, 1),
-                colour,
-                0, 1);
-
-
-            // TR
-            vertexBuffer[1] = Vertex(
-                Vector(x + halfWidth, 0 + halfHeight, 0, 1),
-                colour,
-                1, 1);
-
-            // BL
-            vertexBuffer[2] = Vertex(
-                Vector(x - halfWidth, 0 - halfHeight, 0, 1),
-                colour,
-                0, 0);
-
-            // TR
-            vertexBuffer[3] = Vertex(
-                Vector(x + halfWidth, 0 + halfHeight, 0, 1),
-                colour,
-                1, 1);
-
-            // BR
-            vertexBuffer[4] = Vertex(
-                Vector(x + halfWidth, 0 - halfHeight, 0, 1),
-                colour,
-                1, 0);
-
-            // BL
-            vertexBuffer[5] = Vertex(
-                Vector(x - halfWidth, 0 - halfHeight, 0, 1),
-                colour,
-                0, 0);
-        }
-
-        glVertexPointer(POSITION_SIZE, GL_FLOAT, sizeof(Vertex), vertexBuffer);
+        glVertexPointer(POSITION_SIZE, GL_FLOAT, sizeof(Vertex), mVertexBuffer);
         glEnableClientState(GL_VERTEX_ARRAY);
 
-        glColorPointer(COLOUR_SIZE, GL_FLOAT, sizeof(Vertex), &vertexBuffer[0].r);
+        glColorPointer(COLOUR_SIZE, GL_FLOAT, sizeof(Vertex), &mVertexBuffer[0].r);
         glEnableClientState(GL_COLOR_ARRAY);
 
-        glTexCoordPointer(TEXCOORD_SIZE, GL_FLOAT, sizeof(Vertex), &vertexBuffer[0].u);
+        glTexCoordPointer(TEXCOORD_SIZE, GL_FLOAT, sizeof(Vertex), &mVertexBuffer[0].u);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 
         glPushMatrix();
         {
-            glDrawArrays(GL_TRIANGLES, 0, TOTAL_VERTS);
+            glDrawArrays(GL_TRIANGLES, 0, DISPLAY_QUAD_VERTS);
         }
         glPopMatrix();
 
@@ -358,8 +312,6 @@ void Dinodeck::Update(double deltaTime)
         glDisable(GL_TEXTURE_2D);
     }
 
-
-    //glBindTexture(GL_TEXTURE_2D, prevTexture);
 }
 
 bool Dinodeck::IsRunning() const
@@ -408,4 +360,50 @@ void Dinodeck::OpenGLContextReset()
     mGame->ResetSystemFont();
     mFrameBuffer->Reset(ViewWidth(),
                         ViewHeight());
+}
+
+void Dinodeck::CreateDisplayQuad()
+{
+    // Fill it up
+
+    Vector colour;
+    colour.SetBroadcast(1.0f);
+    const float halfWidth = floor(((float)DisplayWidth())/2.0f);
+    const float halfHeight = floor(((float)DisplayHeight())/2.0f);
+
+    // TL
+    mVertexBuffer[0] = Vertex(
+        Vector(-halfWidth, 0 + halfHeight, 0.f, 1),
+        colour,
+        0, 1);
+
+    // TR
+    mVertexBuffer[1] = Vertex(
+        Vector(halfWidth, 0 + halfHeight, 0, 1),
+        colour,
+        1, 1);
+
+    // BL
+    mVertexBuffer[2] = Vertex(
+        Vector(-halfWidth, 0 - halfHeight, 0, 1),
+        colour,
+        0, 0);
+
+    // TR
+    mVertexBuffer[3] = Vertex(
+        Vector(halfWidth, 0 + halfHeight, 0, 1),
+        colour,
+        1, 1);
+
+    // BR
+    mVertexBuffer[4] = Vertex(
+        Vector(halfWidth, 0 - halfHeight, 0, 1),
+        colour,
+        1, 0);
+
+    // BL
+    mVertexBuffer[5] = Vertex(
+        Vector(-halfWidth, 0 - halfHeight, 0, 1),
+        colour,
+        0, 0);
 }

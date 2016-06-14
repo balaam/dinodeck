@@ -6,6 +6,7 @@
 #include "IAssetOwner.h"
 #include "ManifestAssetStore.h"
 #include "Settings.h"
+#include "Vertex.h"
 
 // Dinodeck is the kernel of the engine and should have limited dependancies.
 // It assumes access to OpenGL
@@ -16,7 +17,6 @@ class TextureManager;
 class IScreenChangeListener;
 class DDAudio;
 class FrameBuffer;
-
 
 class Dinodeck : IAssetOwner
 {
@@ -30,8 +30,9 @@ private:
     IScreenChangeListener* mScreenChangeListener;
     DDAudio* mDDAudio;
     FrameBuffer* mFrameBuffer;
+    static const int DISPLAY_QUAD_VERTS = 6;
+    Vertex mVertexBuffer[DISPLAY_QUAD_VERTS];
     static Dinodeck* Instance;
-
 
 public:
     // There's only going to be one instance of dancing squid.
@@ -73,6 +74,7 @@ public:
     virtual bool OnAssetReload(Asset& asset);
 private:
     void SetModelViewMatrix(float width, float height);
+    void CreateDisplayQuad();
 };
 
 #endif
