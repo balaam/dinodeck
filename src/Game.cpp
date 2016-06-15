@@ -301,6 +301,15 @@ void Game::ResetSystemFont()
     mSystemFont->FaceSize(72.0f);
 }
 
+void Game::InvalidateRendererFonts()
+{
+    for(std::vector<Renderer*>::iterator it = Renderer::mRenderers.begin();
+        it != Renderer::mRenderers.end(); ++it)
+    {
+        (*it)->Graphics()->ClearCachedFont();
+    }
+}
+
 int lua_load_library(lua_State* state)
 {
     if(1 != lua_gettop(state) || !lua_isstring(state,  -1))

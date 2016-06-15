@@ -49,6 +49,7 @@ class GraphicsPipeline
     Vector mCamScale;
     float mRotateAngle;
     eBlendMode mBlendMode;
+    std::string mFontName;
 public:
     static const char* BlendStr[BLEND_COUNT];
 
@@ -90,6 +91,7 @@ public:
     void Reset(); // This resets some of the font state info.
     void OnNewFrame() { mTexture = NULL; }
     bool SetFont(const char* name);
+    void ClearCachedFont() { mFont = NULL; }
 
     void SetBlend(eBlendMode blend);
 

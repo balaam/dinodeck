@@ -358,6 +358,7 @@ void Dinodeck::OpenGLContextReset()
     mManifestAssetStore.SetAsNotLoaded(Asset::Font); // Font also uses textures.
     // Reset the system font too.
     mGame->ResetSystemFont();
+    mGame->InvalidateRendererFonts();
     mFrameBuffer->Reset(ViewWidth(),
                         ViewHeight());
 }
