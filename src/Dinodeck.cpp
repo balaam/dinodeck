@@ -234,31 +234,6 @@ bool Dinodeck::ForceReload()
 //              * Capped to 1/60 on Windows
 void Dinodeck::Update(double deltaTime)
 {
-    // Currently this is a big fat mess
-
-
-    // Might have move debug graphics up to here.
-
-    // 1. RESET should reset the window if either display width
-    // or height change as well as the normal with and height.
-
-    // 2. The map isn't writing the top tile row
-    //    Why? This might be a little debuggable from Lua
-    //    Are the -width -height the same etc.
-
-    // Probably the graphics pipeline *thinks* a current texture
-    // is bound. A better fix, is to invalidate that assumption each frame.
-    //
-    // graphics pipeline->mTexture
-    //
-    // After (and before) text is rendered this should
-    // be done to.
-    // Maybe don't do any glBinds force it through the
-    // texture system
-    //
-
-    // 3. This shouldn't be called each frame, somethings wrong!
-    // mFrameBuffer->Reset(ViewWidth(), ViewHeight());
     mFrameBuffer->Enable(); // draw scene to texture
 
     glClearColor(mSettings.clearRed,
@@ -272,12 +247,10 @@ void Dinodeck::Update(double deltaTime)
     glClearColor(0,  0,  0, 0);
     SetModelViewMatrix(DisplayWidth(), DisplayHeight());
 
-
     {
         glClear(GL_COLOR_BUFFER_BIT);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, mFrameBuffer->TextureId());
-
 
         // This doesn't need doing each frame...
         CreateDisplayQuad();

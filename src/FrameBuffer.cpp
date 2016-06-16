@@ -25,8 +25,8 @@ void FrameBuffer::DestroyBuffer()
 
 void FrameBuffer::Reset(unsigned width, unsigned height)
 {
-	dsprintf("FrameBuffer Reset: width [%d] height: [%d]",
-	         width, height);
+	//dsprintf("FrameBuffer Reset: width [%d] height: [%d]\n",
+	//         width, height);
 	DestroyBuffer();
 	// // 1. Create the frame buffer
 	glGenFramebuffers(NUM_BUFFERS, &mBufferId);
@@ -52,20 +52,11 @@ void FrameBuffer::Reset(unsigned width, unsigned height)
 	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
 
-	// void glFramebufferTexture2D(GLenum target,
-	//                             GLenum attachment,
-	//                             GLenum textarget,
-	//                             GLuint texture,
-	//                             GLint level);
-
 	// 3. Set texture as framebuffer
 	glFramebufferTexture2D(GL_FRAMEBUFFER,
 	                    GL_COLOR_ATTACHMENT0,
 						GL_TEXTURE_2D,
 	                    mTextureId, 0);
-	// glFramebufferTexture(GL_FRAMEBUFFER,
-	//                      GL_COLOR_ATTACHMENT0,
-	//                      mTextureId, 0);
 
 	// 4. Set list of draw buffers (not really sure what this is!)
 	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
