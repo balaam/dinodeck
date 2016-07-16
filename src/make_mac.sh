@@ -38,8 +38,20 @@ then
 fi
 
 make clean
-rm ./dinodeck
+
+if [ -e "./dinodeck" ]
+then
+  rm ./dinodeck
+fi
+
+if [ -e "./dinodeck_mac" ]
+then
+  rm ./dinodeck_mac
+fi
+
 make PLATFORM_DD=MAC
+
+mv ./dinodeck ./dinodeck_mac
 
 install_name_tool -add_rpath "@executable_path/" dinodeck_mac
 
