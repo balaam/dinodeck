@@ -794,7 +794,7 @@ static int lua_GetKern(lua_State* state)
     return 1;
 }
 
-static int lua_Scissor(lua_State* state)
+static int lua_Clip(lua_State* state)
 {
     Renderer* renderer = LuaState::GetFuncParam<Renderer>(state, 1);
     if(renderer == NULL)
@@ -818,20 +818,12 @@ static int lua_Scissor(lua_State* state)
         return luaL_typerror(state, 6, "function");
     }
 
-    renderer->Graphics()->Flush();
-
-
-    glEnable(GL_SCISSOR_TEST); // Turn on scissor
+    renderer->Graphics()->PushScissor(x, y, w, h);
     {
         // Call the function, not sure what happens if it errors.
-        glScissor(x, y, w, h);
         lua_call (state, 0, 0);
-        renderer->Graphics()->Flush();
     }
-    glDisable(GL_SCISSOR_TEST); // Turn off scissor
-
-
-
+    renderer->Graphics()->PopScissor();
 
     return 0;
 }
@@ -864,7 +856,7 @@ static const struct luaL_reg luaBinding [] =
     {"SetFont", lua_SetFont},
     {"SetBlend", lua_SetBlend},
     {"GetKern", lua_GetKern},
-    {"Scissor", lua_Scissor},
+    {"Clip", lua_Clip},
     {NULL, NULL}  /* sentinel */
 };
 
